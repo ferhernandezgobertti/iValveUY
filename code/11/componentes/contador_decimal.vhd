@@ -1,0 +1,104 @@
+library IEEE;
+use ieee.std_logic_1164.all;
+
+entity contador_decimal is
+	port (
+		clock: in std_logic;
+		binario1: out std_logic_vector(3 downto 0);
+		binario2: out std_logic_vector(3 downto 0);
+		binario3: out std_logic_vector(3 downto 0);
+		cuenta1: out std_logic_vector(7 downto 0);
+		cuenta2: out std_logic_vector(7 downto 0);
+		cuenta3: out std_logic_vector(7 downto 0);
+		carryin: in std_logic;
+		ud: in std_logic;
+		reset: in std_logic
+	);
+end entity;
+
+architecture contando of contador_decimal is
+
+component deco7segmentos is
+	port(
+		punto: in std_logic;
+		numin : in std_logic_vector(3 downto 0);
+		deco_out : out std_logic_vector(7 downto 0)
+	);
+end component;
+
+component contador_4bits is
+	port(
+		clk: in std_logic;
+		carryin: in std_logic;
+		updown: in std_logic;
+		presetEnable: in std_logic;
+		cuentaReset: in std_logic_vector (3 downto 0);
+		carryout: out std_logic;
+		outputs: out std_logic_vector(3 downto 0)
+	);
+end component;
+
+signal cuentaBin1, cuentaBin2, cuentaBin3: std_logic_vector (3 downto 0);
+signal carry1, carry2: std_logic;
+
+begin
+
+C1: contador_4bits
+	port map(
+		clk => clock,
+		carryin => not(carryin),
+		updown => ud,
+		presetEnable => not(reset),
+		cuentaReset => "1010",
+		carryout => carry1,
+		outputs => cuentaBin1
+	);
+
+C2: contador_4bits
+	port map(
+		clk => carry1,
+		carryin => '1',
+		updown => ud,
+		presetEnable => not(reset),
+		cuentaReset => "1010",
+		carryout => carry2,
+		outputs => cuentaBin2
+	);
+
+C3: contador_4bits
+	port map(
+		clk => carry2,
+		carryin => '1',
+		updown => ud,
+		presetEnable => not(reset),
+		cuentaReset => "0110",
+		carryout => open,
+		outputs => cuentaBin3
+	);
+
+D71: deco7segmentos
+	port map(
+		punto => '1',
+		numin => cuentaBin1,
+		deco_out => cuenta1
+	);
+
+D72: deco7segmentos
+	port map(
+		punto => '0',
+		numin => cuentaBin2,
+		deco_out => cuenta2
+	);
+
+D73: deco7segmentos
+	port map(
+		punto => '1',
+		numin => cuentaBin3,
+		deco_out => cuenta3
+	);
+
+binario1 <= cuentaBin1;
+binario2 <= cuentaBin2;
+binario3 <= cuentaBin3;
+
+end architecture;
